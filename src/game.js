@@ -1,10 +1,10 @@
 (function () {
     // Constants initialized here
     var Gravity = 0.35;
-    var Distance = 200;
+    var Distance = 250;
     var hGravity = 0.0005;
     var MaxVelocity = 7;
-    var HoleSize = 115; // static HoleSize
+    var HoleSize = 135; // static HoleSize
     var BirdJump = -6.5;
     var activePipes = [];
     var deadPipes = [];
@@ -15,12 +15,12 @@
     var imgLoaded = false;
     var backgroundLoaded = false;
     var birdImg = document.createElement("img");
-    birdImg.src = "bird.png";
+    birdImg.src = "../resources/bird.png";
     birdImg.onload = function () {
         imgLoaded = true;
     }
     var backgroundImg = document.createElement("img");
-    backgroundImg.src = "back.png";
+    backgroundImg.src = "../resources/back.png";
 
     // THIS IS A CLASS
     // access aligned bounding box
@@ -153,8 +153,9 @@
     function generatePipes(context) {
         while (activePipes.length < 10) {
             // bitwise 0 to get the actual integer not floating
-            var pipeOneHeight = Math.random() * (context.canvas.height - 250) + 100 | 0; // 350
-            var pipeTwoHeight = context.canvas.height - HoleSize - pipeOneHeight-50;
+            var height = context.canvas.height - 50;
+            var pipeOneHeight = Math.random() * (height - 250) + 100 | 0; // 350
+            var pipeTwoHeight = height - HoleSize - pipeOneHeight;
             if (activePipes.length === 0) {
                 pipeOne = new Pipes(new aabb(800, 0, PipeWidth, pipeOneHeight), -1.5);
                 pipeTwo = new Pipes(new aabb(800, pipeOneHeight + HoleSize, PipeWidth, pipeTwoHeight), -1.5);
@@ -166,6 +167,8 @@
                     var temp = deadPipes.splice(0,2);
                     pipeOne = temp[0];
                     pipeTwo = temp[1];
+                    pipeOne.scored = false;
+                    pipeTwo.scored = false;
                     pipeOne.aabb.x = comparePipe.aabb.x + Distance;
                     pipeTwo.aabb.x = comparePipe.aabb.x + Distance;
                     pipeTwo.aabb.y = pipeOneHeight + HoleSize;
@@ -184,12 +187,8 @@
 
             // TODO: Implement boost
             // TODO: Background
-            // TODO: Pipe/Bird PNG
-            // TODO: Physics
             // TODO: Animation
-            // SPACING
             // LABEL UPDATE
-            // TODO: Pre-render?
         }
     }
 
@@ -223,8 +222,6 @@
             return;
         context.save();
         context.font = 'bold 30pt Calibri';
-        context.fillText(Score, 100, 100);
-        var pipeOne = activePipes[0];
         var gap = activePipes[0].aabb.h;
         var width = activePipes[0].aabb.x;
 
@@ -232,6 +229,7 @@
             Score += 1;
             activePipes[0].scored = true;
         }
+        context.fillText(Score, 100, 100);
         context.restore();
     }
 
@@ -297,6 +295,7 @@
             context.save();
             context.clearRect(0, 0, context.canvas.width, context.canvas.height);
             generatePipes(context);
+            updateScore(context, bird);
             //context.rotate(Math.PI * i / 180 / 2);
 
             /*
@@ -316,7 +315,6 @@
             context.fill();
             context.stroke();
             context.restore();
-            updateScore(context, bird);
 
             /*
             //context.strokeStyle = "blue";
@@ -326,7 +324,7 @@
             */
 
             // restores the clean context state (like MIPS s-registers)
-            context.restore();
+            //context.restore();
             killPipe();
             //if(isGameOver(bird, context)){
                 //return;
