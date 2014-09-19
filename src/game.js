@@ -4,7 +4,7 @@
     var Distance = 250;
     var hGravity = 0.0005;
     var MaxVelocity = 7;
-    var HoleSize = 135; // static HoleSize
+    var HoleSize = 100; // static HoleSize
     var BirdJump = -6.5;
     var activePipes = [];
     var deadPipes = [];
@@ -13,15 +13,26 @@
     var Boost = -10;
     var floorHeight = 55;
     // use boolean in case image not loaded, square instead of img
-    var imgLoaded = false;
-    var backgroundLoaded = false;
-    var birdImg = document.createElement("img");
-    birdImg.src = "../resources/bird.png";
-    birdImg.onload = function () {
-        imgLoaded = true;
-    }
+    //var imgLoaded = false;
+    //var birdImg = document.createElement("img");
+    //birdImg.src = "../resources/bird.png";
+    //birdImg.onload = function () {
+    //    imgLoaded = true;
+    //}
+
+    var BirdImgs = [];
+    var birdImgUp = document.createElement("img");
+    birdImgUp.src = "../resources/wingup.png";
+    var birdImgRest = document.createElement("img");
+    birdImgRest.src = "../resources/wing mid.png";
+    var birdImgDown = document.createElement("img");
+    birdImgDown.src = "../resources/wing down.png";
+    BirdImgs.push(birdImgUp);
+    BirdImgs.push(birdImgRest);
+    BirdImgs.push(birdImgDown);
+
     var backgroundImg = document.createElement("img");
-    backgroundImg.src = "../resources/fullback.png";
+    backgroundImg.src = "../resources/darkbackground.png";
     // THIS IS A CLASS
     // access aligned bounding box
     function aabb(x, y, w, h) {
@@ -117,7 +128,17 @@
         this.aabb = aabb;
         this.swayValue = 0.1;
         this.swayDirection = true;
+        this.picture = 0;
         this.sway = function (context) {
+            var index = 0;
+            if (this.picture < 20) 
+                index = 0;
+            else if (this.picture < 40 || this.picture > 60)
+                index = 1;
+            else
+                index = 2;
+            var drawBird = BirdImgs[index];
+            // toggles direction whether to fly up or down
             if (this.swayValue > 10 && this.swayDirection) {
                 this.swayDirection = false;
             }
@@ -125,13 +146,16 @@
                 this.swayDirection = true;
             }
             if (this.swayValue < 10 && this.swayDirection) {
-                this.swayValue += 0.2;
+                this.swayValue += 0.5;
             }
             else {
-                this.swayValue -= 0.2;
+                this.swayValue -= 0.5;
             }
-
-            context.drawImage(birdImg, this.aabb.x, this.aabb.y + this.swayValue);
+            this.picture++;
+            if(this.picture > 80) {
+                this.picture = 0;
+            }
+            context.drawImage(drawBird, this.aabb.x, this.aabb.y + this.swayValue);
         }
         this.draw = function (context) {
             context.save();
@@ -139,12 +163,14 @@
             this.vVelocity = Math.min(this.vVelocity, MaxVelocity);
             this.aabb.y = this.aabb.y < 0 ? 0 : Math.min(this.aabb.y, context.canvas.height - this.aabb.h);
             this.aabb.x = Math.max(this.aabb.x, 0);
-            context.beginPath();
-            context.rect(this.aabb.x, this.aabb.y, this.aabb.w, this.aabb.h);
             this.sway(context);
-            context.lineWidths = 8;
-            context.strokeStyle = 'black';
-            context.stroke();
+            
+            // commented part for box around bird
+            //context.beginPath();
+            //context.rect(this.aabb.x, this.aabb.y, this.aabb.w, this.aabb.h);
+            //context.lineWidths = 8;
+            //context.strokeStyle = 'black';
+            //context.stroke();
             this.aabb.y = this.aabb.y + this.vVelocity;
             context.restore();
         }
@@ -238,7 +264,7 @@
 
     window.onload = function () {
         //Bird.prototype = new gameObject(new aabb(100, 200, 20, 20), -1, 0, "bird");
-        var bird = new Bird(new aabb(100, 200, 40, 50), -1);
+        var bird = new Bird(new aabb(100, 200, 35, 35), -1);
         var pressed = false;
 
         //var bird = new gameObject(new aabb(100, 200, 20, 20), -1, 0, "bird");
