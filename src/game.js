@@ -11,7 +11,7 @@
     var Score = 0;
     var PipeWidth = 52;
     var PipeLength = 320;
-    var PipeVelocity = -2;
+    var PipeVelocity = -2.5;
     var Boost = -10;
     var floorHeight = 55;
     var animater = 0;
@@ -178,7 +178,7 @@
             if(this.picture > 80) {
                 this.picture = 0;
             }
-            context.drawImage(drawBird, this.aabb.x, this.aabb.y + this.swayValue);
+            context.drawImage(drawBird, this.aabb.x, this.aabb.y ); //+ this.swayValue);
         }
         this.draw = function (context) {
             context.save();
@@ -284,7 +284,7 @@
 
     window.onload = function () {
         //Bird.prototype = new gameObject(new aabb(100, 200, 20, 20), -1, 0, "bird");
-        var bird = new Bird(new aabb(100, 200, 35, 35), -1);
+        var bird = new Bird(new aabb(100, 200, 35, 20), -1);
         var pressed = false;
 
         //var bird = new gameObject(new aabb(100, 200, 20, 20), -1, 0, "bird");
@@ -357,14 +357,14 @@
             bird.draw(context);
             context.beginPath();
             for (var i = 0; i < activePipes.length; i++) {
-                activePipes[i].hVelocity -= hGravity;
+                //activePipes[i].hVelocity -= hGravity;
                 activePipes[i].draw(context);
             }
             context.drawImage(floor,-1 * animater, context.canvas.height - floorHeight);
             // context.fill();
             // context.stroke();
             context.restore();
-            animater +=4;
+            animater +=3.5;
             if(animater > 500) {
                 animater = 0;
             }
