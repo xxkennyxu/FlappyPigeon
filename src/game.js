@@ -1,7 +1,7 @@
 (function () {
     // Constants initialized here
     var Gravity = 0.35;
-    var Distance = 250;
+    var Distance = 215;
     var hGravity = 0.0005;
     var MaxVelocity = 7;
     var HoleSize = 100; // static HoleSize
@@ -9,7 +9,8 @@
     var activePipes = [];
     var deadPipes = [];
     var Score = 0;
-    var PipeWidth = 60;
+    var PipeWidth = 52;
+    var PipeLength = 320;
     var Boost = -10;
     var floorHeight = 55;
     // use boolean in case image not loaded, square instead of img
@@ -33,6 +34,12 @@
 
     var backgroundImg = document.createElement("img");
     backgroundImg.src = "../resources/darkbackground.png";
+
+    var pipeDown = document.createElement("img");
+    pipeDown.src = "../resources/pipedown.png";
+    var pipeUp = document.createElement("img");
+    pipeUp.src = "../resources/pipeup.png";
+
     // THIS IS A CLASS
     // access aligned bounding box
     function aabb(x, y, w, h) {
@@ -101,25 +108,30 @@
         }
     }
 
-    function Pipes(aabb, hVelocity) {
+    function Pipes(aabb, hVelocity, direction) {
         // commented part helps performance - batch canvas calls
         this.hVelocity = hVelocity;
         this.aabb = aabb;
         this.scored = false;
+        this.isFacingDown = direction;
         this.draw = function (context) {
-            //context.save();
+            var drawImg = this.isFacingDown ? pipeDown : pipeUp;
+            var height = this.isFacingDown ? this.aabb.h - PipeLength : this.aabb.y;
+            context.save();
             this.hVelocity = Math.max(this.hVelocity, -MaxVelocity);
             context.fillStyle = "red";
             this.aabb.y = this.aabb.y < 0 ? 0 : Math.min(this.aabb.y, context.canvas.height - this.aabb.h);
             this.aabb.x = Math.max(this.aabb.x, 0-aabb.w);
+            context.drawImage(drawImg, this.aabb.x, height);
+            
             //context.beginPath();
-            context.rect(this.aabb.x, this.aabb.y, this.aabb.w, this.aabb.h);
+            //context.rect(this.aabb.x, this.aabb.y, this.aabb.w, this.aabb.h);
             //context.fill();
-            context.lineWidths = 8;
-            context.strokeStyle = 'black';
+            //context.lineWidths = 8;
+            //context.strokeStyle = 'black';
             //context.stroke();
             this.aabb.x = this.aabb.x + this.hVelocity;
-            //context.restore();
+            context.restore();
         }
     }
 
@@ -183,8 +195,8 @@
             var pipeOneHeight = Math.random() * (height - 250) + 100 | 0; // 350
             var pipeTwoHeight = height - HoleSize - pipeOneHeight;
             if (activePipes.length === 0) {
-                pipeOne = new Pipes(new aabb(800, 0, PipeWidth, pipeOneHeight), -1.5);
-                pipeTwo = new Pipes(new aabb(800, pipeOneHeight + HoleSize, PipeWidth, pipeTwoHeight), -1.5);
+                pipeOne = new Pipes(new aabb(800, 0, PipeWidth, pipeOneHeight), -1.5, true);
+                pipeTwo = new Pipes(new aabb(800, pipeOneHeight + HoleSize, PipeWidth, pipeTwoHeight), -1.5, false);
             }
             else {
                 var index = activePipes.length - 1;
@@ -204,8 +216,8 @@
                     pipeTwo.hVelocity = comparePipe.hVelocity;
                 }
                 else{
-                    pipeOne = new Pipes(new aabb(comparePipe.aabb.x + Distance, 0, PipeWidth, pipeOneHeight), comparePipe.hVelocity)
-                    pipeTwo = new Pipes(new aabb(comparePipe.aabb.x + Distance, pipeOneHeight + HoleSize, PipeWidth, pipeTwoHeight), comparePipe.hVelocity)
+                    pipeOne = new Pipes(new aabb(comparePipe.aabb.x + Distance, 0, PipeWidth, pipeOneHeight), comparePipe.hVelocity, true)
+                    pipeTwo = new Pipes(new aabb(comparePipe.aabb.x + Distance, pipeOneHeight + HoleSize, PipeWidth, pipeTwoHeight), comparePipe.hVelocity, false)
                 }
                             }
             activePipes.push(pipeOne);
