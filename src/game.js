@@ -11,8 +11,10 @@
     var Score = 0;
     var PipeWidth = 52;
     var PipeLength = 320;
+    var PipeVelocity = -2;
     var Boost = -10;
     var floorHeight = 55;
+    var animater = 0;
     // use boolean in case image not loaded, square instead of img
     //var imgLoaded = false;
     //var birdImg = document.createElement("img");
@@ -21,6 +23,8 @@
     //    imgLoaded = true;
     //}
 
+
+    // bird animations
     var BirdImgs = [];
     var birdImgUp = document.createElement("img");
     birdImgUp.src = "../resources/wingup.png";
@@ -31,10 +35,16 @@
     BirdImgs.push(birdImgUp);
     BirdImgs.push(birdImgRest);
     BirdImgs.push(birdImgDown);
-
+    
+    //background pic
     var backgroundImg = document.createElement("img");
-    backgroundImg.src = "../resources/darkbackground.png";
+    backgroundImg.src = "../resources/backnofloor.png";
+        
+    // moving ground
+    var floor = document.createElement("img");
+    floor.src = "../resources/longfloor.png";
 
+    // pipe up down
     var pipeDown = document.createElement("img");
     pipeDown.src = "../resources/pipedown.png";
     var pipeUp = document.createElement("img");
@@ -123,7 +133,8 @@
             this.aabb.y = this.aabb.y < 0 ? 0 : Math.min(this.aabb.y, context.canvas.height - this.aabb.h);
             this.aabb.x = Math.max(this.aabb.x, 0-aabb.w);
             context.drawImage(drawImg, this.aabb.x, height);
-            
+           
+            // no img pipes
             //context.beginPath();
             //context.rect(this.aabb.x, this.aabb.y, this.aabb.w, this.aabb.h);
             //context.fill();
@@ -195,8 +206,8 @@
             var pipeOneHeight = Math.random() * (height - 250) + 100 | 0; // 350
             var pipeTwoHeight = height - HoleSize - pipeOneHeight;
             if (activePipes.length === 0) {
-                pipeOne = new Pipes(new aabb(800, 0, PipeWidth, pipeOneHeight), -1.5, true);
-                pipeTwo = new Pipes(new aabb(800, pipeOneHeight + HoleSize, PipeWidth, pipeTwoHeight), -1.5, false);
+                pipeOne = new Pipes(new aabb(800, 0, PipeWidth, pipeOneHeight), PipeVelocity, true);
+                pipeTwo = new Pipes(new aabb(800, pipeOneHeight + HoleSize, PipeWidth, pipeTwoHeight), PipeVelocity, false);
             }
             else {
                 var index = activePipes.length - 1;
@@ -224,9 +235,8 @@
             activePipes.push(pipeTwo);
 
             // TODO: Implement boost
-            // TODO: Background
-            // TODO: Animation
-            // LABEL UPDATE
+            // TODO: Implement new game
+            // TODO: menus
         }
     }
 
@@ -247,12 +257,10 @@
         var floorBound = context.canvas.height - floorHeight <= (bird.aabb.y + bird.aabb.h);            
         for (var i = 0; i < activePipes.length; i++) {
             if (activePipes[i].aabb.intersect(bird.aabb)) {
-                alert("Hit the pipe!");
                 return true;
             }
         }
         if(floorBound){
-            alert("Hit the floor!")
             return true;
         }
         return false;
@@ -336,7 +344,6 @@
             context.save();
             context.clearRect(0, 0, context.canvas.width, context.canvas.height);
             generatePipes(context);
-            updateScore(context, bird);
             //context.rotate(Math.PI * i / 180 / 2);
 
             /*
@@ -353,10 +360,14 @@
                 activePipes[i].hVelocity -= hGravity;
                 activePipes[i].draw(context);
             }
-            context.fill();
-            context.stroke();
+            context.drawImage(floor,-1 * animater, context.canvas.height - floorHeight);
+            // context.fill();
+            // context.stroke();
             context.restore();
-
+            animater +=4;
+            if(animater > 500) {
+                animater = 0;
+            }
             /*
             //context.strokeStyle = "blue";
             //context.stroke();
@@ -367,11 +378,11 @@
             // restores the clean context state (like MIPS s-registers)
             //context.restore();
             killPipe();
-            //if(isGameOver(bird, context)){
-                //return;
-            //}
+            if(isGameOver(bird, context)){
+                return;
+            }
 
-
+            updateScore(context, bird);
 
             requestAnimationFrame(renderLoop);
         });
