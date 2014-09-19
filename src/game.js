@@ -11,6 +11,7 @@
     var Score = 0;
     var PipeWidth = 60;
     var Boost = -10;
+    var floorHeight = 55;
     // use boolean in case image not loaded, square instead of img
     var imgLoaded = false;
     var backgroundLoaded = false;
@@ -152,7 +153,7 @@
     function generatePipes(context) {
         while (activePipes.length < 10) {
             // bitwise 0 to get the actual integer not floating
-            var height = context.canvas.height - 50;
+            var height = context.canvas.height - floorHeight;
             var pipeOneHeight = Math.random() * (height - 250) + 100 | 0; // 350
             var pipeTwoHeight = height - HoleSize - pipeOneHeight;
             if (activePipes.length === 0) {
@@ -205,7 +206,7 @@
     }
 
     function isGameOver(bird, context){
-        var floorBound = context.canvas.height - 50 <= (bird.aabb.y + bird.aabb.h);            
+        var floorBound = context.canvas.height - floorHeight <= (bird.aabb.y + bird.aabb.h);            
         for (var i = 0; i < activePipes.length; i++) {
             if (activePipes[i].aabb.intersect(bird.aabb)) {
                 alert("Hit the pipe!");
