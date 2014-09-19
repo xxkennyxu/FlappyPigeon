@@ -20,8 +20,7 @@
         imgLoaded = true;
     }
     var backgroundImg = document.createElement("img");
-    backgroundImg.src = "../resources/back.png";
-
+    backgroundImg.src = "../resources/fullback.png";
     // THIS IS A CLASS
     // access aligned bounding box
     function aabb(x, y, w, h) {
@@ -197,13 +196,16 @@
             // GC flag to deallocate memory
             //activePipes[0] = null;
             //activePipes[1] = null;
+            
+            // different approach; splice the "dead" arrays and persist them
+            // for later use to restore them to "live pipes"
             var temp = activePipes.splice(0, 2);
             deadPipes = deadPipes.concat(temp);
         }
     }
 
     function isGameOver(bird, context){
-        var floorBound = context.canvas.height <= (bird.aabb.y + bird.aabb.h);            
+        var floorBound = context.canvas.height - 50 <= (bird.aabb.y + bird.aabb.h);            
         for (var i = 0; i < activePipes.length; i++) {
             if (activePipes[i].aabb.intersect(bird.aabb)) {
                 alert("Hit the pipe!");
