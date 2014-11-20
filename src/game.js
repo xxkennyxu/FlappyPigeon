@@ -15,6 +15,8 @@
     var Boost = -10;
     var floorHeight = 55;
     var animater = 0;
+    var gameOver = false;
+    var gameActive = false;
     // use boolean in case image not loaded, square instead of img
     //var imgLoaded = false;
     //var birdImg = document.createElement("img");
@@ -27,28 +29,28 @@
     // bird animations
     var BirdImgs = [];
     var birdImgUp = document.createElement("img");
-    birdImgUp.src = "../resources/wingup.png";
+    birdImgUp.src = "resources/wingup.png";
     var birdImgRest = document.createElement("img");
-    birdImgRest.src = "../resources/wing mid.png";
+    birdImgRest.src = "resources/wing mid.png";
     var birdImgDown = document.createElement("img");
-    birdImgDown.src = "../resources/wing down.png";
+    birdImgDown.src = "resources/wing down.png";
     BirdImgs.push(birdImgUp);
     BirdImgs.push(birdImgRest);
     BirdImgs.push(birdImgDown);
     
     //background pic
     var backgroundImg = document.createElement("img");
-    backgroundImg.src = "../resources/backnofloor.png";
+    backgroundImg.src = "resources/backnofloor.png";
         
     // moving ground
     var floor = document.createElement("img");
-    floor.src = "../resources/longfloor.png";
+    floor.src = "resources/longfloor.png";
 
     // pipe up down
     var pipeDown = document.createElement("img");
-    pipeDown.src = "../resources/pipedown.png";
+    pipeDown.src = "resources/pipedown.png";
     var pipeUp = document.createElement("img");
-    pipeUp.src = "../resources/pipeup.png";
+    pipeUp.src = "resources/pipeup.png";
 
     // THIS IS A CLASS
     // access aligned bounding box
@@ -152,6 +154,7 @@
         this.swayValue = 0.1;
         this.swayDirection = true;
         this.picture = 0;
+        this.calculatedRadian = 0;
         this.sway = function (context) {
             var index = 0;
             if (this.picture < 20) 
@@ -162,10 +165,10 @@
                 index = 2;
             var drawBird = BirdImgs[index];
             // toggles direction whether to fly up or down
-            if (this.swayValue > 10 && this.swayDirection) {
+            if (this.swayValue > 5 && this.swayDirection) {
                 this.swayDirection = false;
             }
-            else if(this.swayValue < 0 && !this.swayDirection){
+            else if(this.swayValue < -5 && !this.swayDirection){
                 this.swayDirection = true;
             }
             if (this.swayValue < 10 && this.swayDirection) {
@@ -178,7 +181,17 @@
             if(this.picture > 80) {
                 this.picture = 0;
             }
-            context.drawImage(drawBird, this.aabb.x, this.aabb.y ); //+ this.swayValue);
+
+            calculatedRadian = this.vVelocity * 7.5;
+            if(calculatedRadian > 50) {
+                calculatedRadian = 50;
+            } else if (calculatedRadian < -50) {
+                calculatedRadian = -50;
+            }
+            
+            rotateAndPaintImage( context, drawBird, calculatedRadian, this);
+        
+            //context.drawImage(drawBird, (this.aabb.x), (this.aabb.y) ); //+ this.swayValue);
         }
         this.draw = function (context) {
             context.save();
@@ -186,6 +199,9 @@
             this.vVelocity = Math.min(this.vVelocity, MaxVelocity);
             this.aabb.y = this.aabb.y < 0 ? 0 : Math.min(this.aabb.y, context.canvas.height - this.aabb.h);
             this.aabb.x = Math.max(this.aabb.x, 0);
+            if(!gameActive){
+                this.vVelocity = 0;
+            } 
             this.sway(context);
             
             // commented part for box around bird
@@ -196,7 +212,21 @@
             //context.stroke();
             this.aabb.y = this.aabb.y + this.vVelocity;
             context.restore();
+            
         }
+    }
+
+    function rotateAndPaintImage ( context, image, angleInRad , bird ) {
+        var TO_RADIANS = Math.PI/180;
+        var yAdjuster = angleInRad < 0 ? (-angleInRad/5) : (-angleInRad/3);
+        var xAdjuster = angleInRad > angleInRad/2.5 ? angleInRad/3 : 0 
+        var middleX = bird.aabb.x + xAdjuster;
+        var middleY = bird.aabb.y + yAdjuster;
+        context.translate( middleX, middleY );
+        context.rotate( angleInRad * TO_RADIANS);
+        context.drawImage( image, 0, bird.swayValue );
+        context.rotate( -angleInRad * TO_RADIANS);
+        context.translate( -middleX, -middleY );
     }
 
     function generatePipes(context) {
@@ -234,9 +264,6 @@
             activePipes.push(pipeOne);
             activePipes.push(pipeTwo);
 
-            // TODO: Implement boost
-            // TODO: Implement new game
-            // TODO: menus
         }
     }
 
@@ -312,7 +339,14 @@
             */
 
             if (e.keyCode === 102 && !pressed) {
-                
+                if(gameOver) {
+                    gameActive = false;
+                    gameOver = false;
+                    window.onload();
+                } else {
+                    gameActive = true;
+                }
+                bird.vVelocity = BirdJump;
                 pressed = true;
             }
 
@@ -322,7 +356,13 @@
                 // acceleration; tough to do; set static velocity when pressed
                 //bird.velocity -= 2;
                 */
-
+                if(gameOver){
+                    gameActive = false;
+                    gameOver = false;
+                    window.onload();
+                } else {
+                    gameActive = true;
+                }
                 bird.vVelocity = BirdJump;
                 pressed = true;
             }
@@ -343,7 +383,11 @@
             // saves the clean context state
             context.save();
             context.clearRect(0, 0, context.canvas.width, context.canvas.height);
-            generatePipes(context);
+            if(gameActive){
+                generatePipes(context);
+                killPipe();
+                updateScore(context, bird);
+            }
             //context.rotate(Math.PI * i / 180 / 2);
 
             /*
@@ -377,14 +421,19 @@
 
             // restores the clean context state (like MIPS s-registers)
             //context.restore();
-            killPipe();
             if(isGameOver(bird, context)){
-                return;
+                // cleanup
+                gameOver = true;
+                activePipes.splice(0,activePipes.length);
+                // TODO: Display gameover and re-prompt restart
+                // TODO: Click to start
+                // TODO: Death
+                // TODO: Scoring
+            } else { 
+                requestAnimationFrame(renderLoop);
             }
 
-            updateScore(context, bird);
 
-            requestAnimationFrame(renderLoop);
         });
         
     };
