@@ -276,37 +276,39 @@
         backCtx.drawImage(backgroundImg, 0, 0);
 
         var pressed = false;
+
+        function pressMe() {
+            // If the game was over, invoke new game state
+            if(gameOver) {
+                newGame();
+            }
+            // If the game is not over, start the game 
+            else if (!gameActive) {
+                gameActive = true;
+            }
+            bird.vVelocity = BirdJump;
+        }
+
         window.onkeypress = function (e) {
 
             /*
                 view the keystroke
-                alert(e.keyCode);
+                console.log(e.keyCode);
             */
             /*
                 Acceleration; tough to do; set static velocity when pressed
                 bird.velocity -= 2;
             */
 
-            function pressMe() {
-                // If the game was over, invoke new game state
-                if(gameOver) {
-                    newGame();
-                }
-                // If the game is not over, start the game 
-                else if (!gameActive) {
-                    gameActive = true;
-                }
-                bird.vVelocity = BirdJump;
-                pressed = true;
-            }
-
             // Spacebar KeyCode
             if (e.keyCode === 102 && !pressed) {
+                pressed = true;
                 pressMe();
             }
 
             // Tap KeyCode
             if (e.keyCode === 32 && !pressed) {
+                pressed = true;
                 pressMe();
             }
         }
@@ -323,7 +325,7 @@
 
         // Click KeyCode
         window.onclick = function (e) {
-            bird.vVelocity = BirdJump;
+            pressMe();
         }
 
         requestAnimationFrame(function renderLoop() {
@@ -389,6 +391,7 @@
         function newGame() {
             gameActive = false;
             gameOver = false;
+            Score = 0;
             activePipes.splice(0, activePipes.length);
             window.onload();
         }
