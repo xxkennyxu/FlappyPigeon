@@ -4,7 +4,7 @@
     var Distance = 215;
     var hGravity = 0.0005;
     var MaxVelocity = 7;
-    var HoleSize = 100; // static HoleSize
+    var HoleSize = 100;
     var BirdJump = -6.5;
     var activePipes = [];
     var deadPipes = [];
@@ -17,14 +17,6 @@
     var animater = 0;
     var gameOver = false;
     var gameActive = false;
-    // use boolean in case image not loaded, square instead of img
-    //var imgLoaded = false;
-    //var birdImg = document.createElement("img");
-    //birdImg.src = "../resources/bird.png";
-    //birdImg.onload = function () {
-    //    imgLoaded = true;
-    //}
-
 
     // bird animations
     var BirdImgs = [];
@@ -52,7 +44,6 @@
     var pipeUp = document.createElement("img");
     pipeUp.src = "resources/pipeup.png";
 
-    // THIS IS A CLASS
     // access aligned bounding box
     function aabb(x, y, w, h) {
         // these are the dimension for the OBJECT to intersect 
@@ -72,51 +63,6 @@
         }
         this.contains = function (x, y) {
             return x >= this.x && x <= (this.x + this.w) && y >= this.y && y <= (this.y + this.h);
-        }
-    }
-
-    function gameObject(aabb, velocity, hVelocity, type) {
-        // velocity is vertical movement
-        this.aabb = aabb;
-        this.velocity = velocity;
-        this.hVelocity = hVelocity;
-        this.type = type;
-        //this.game = game;
-        this.draw = function (context) {
-            // save and restore state as well, it can be used in a loop
-            // multiple times in the same requestAnimationFrame function
-            this.velocity = type === "bird" ? this.velocity + Gravity : this.velocity;
-            this.velocity = Math.min(this.velocity, MaxVelocity);
-            this.hVelocity = Math.min(this.hVelocity, MaxVelocity);
-            context.save();
-            context.fillStyle = this.type === "bird" ? "blue" : "red";
-            // scope-ly speaking, var is the only thing accessible w/o a dot
-            // limits the lower & upper boundary
-            this.aabb.y = this.aabb.y < 0 ? 0 : Math.min(this.aabb.y, context.canvas.height - this.aabb.h);
-            // limits left boundary
-            this.aabb.x = Math.max(this.aabb.x, 0);
-            context.beginPath();
-            this.type === "bird" ? context.drawImage(birdImg, this.aabb.x, this.aabb.y) : context.fill();
-            context.rect(this.aabb.x, this.aabb.y, this.aabb.w, this.aabb.h);
-            if (type === "bird")
-                context.drawImage(birdImg, this.aabb.x, this.aabb.y)
-            else {
-                context.fill();
-            }
-            context.lineWidths = 8;
-            context.strokeStyle = 'black';
-            context.stroke();
-            this.aabb.y = this.aabb.y + this.velocity;
-            this.aabb.x = this.aabb.x + this.hVelocity;
-
-            /*
-            if (this.type === "pipe") {
-                if (this.game.bird.aabb.intersect(this.aabb)) {
-                    alert("Game Over!");
-                }
-            }*/
-
-            context.restore();
         }
     }
 
@@ -189,9 +135,7 @@
                 calculatedRadian = -50;
             }
             
-            rotateAndPaintImage( context, drawBird, calculatedRadian, this);
-        
-            //context.drawImage(drawBird, (this.aabb.x), (this.aabb.y) ); //+ this.swayValue);
+            rotateAndPaintImage( context, drawBird, calculatedRadian, this);        
         }
         this.draw = function (context) {
             context.save();
@@ -216,6 +160,7 @@
         }
     }
 
+    /* Helper function to rotate the bird depending on their vertical velocity */
     function rotateAndPaintImage ( context, image, angleInRad , bird ) {
         var TO_RADIANS = Math.PI/180;
         var yAdjuster = angleInRad < 0 ? (-angleInRad/5) : (-angleInRad/3);
@@ -229,6 +174,7 @@
         context.translate( -middleX, -middleY );
     }
 
+    /* Generate pipes for the game; re-uses dead objects to reduce load on browser */
     function generatePipes(context) {
         while (activePipes.length < 10) {
             // bitwise 0 to get the actual integer not floating
@@ -267,6 +213,7 @@
         }
     }
 
+    /* Function to recycle "dead" pipes */
     function killPipe() {
         if (activePipes[0].aabb.x <= 0 - activePipes[0].aabb.w) {
             // GC flag to deallocate memory
@@ -280,49 +227,46 @@
         }
     }
 
+    /* Check if the game is over */
     function isGameOver(bird, context){
-        var floorBound = context.canvas.height - floorHeight <= (bird.aabb.y + bird.aabb.h);            
+        var floorBound = context.canvas.height - floorHeight + 3 < (bird.aabb.y + bird.aabb.h);
+        if(floorBound){
+            return true;
+        }
         for (var i = 0; i < activePipes.length; i++) {
             if (activePipes[i].aabb.intersect(bird.aabb)) {
                 return true;
             }
         }
-        if(floorBound){
-            return true;
-        }
+
         return false;
     }
 
+    /* Update the current score */
     function updateScore(context, bird) {
-        if(activePipes[0].scored)
+        var currentPipe = activePipes[0];
+        // If there are no pipes, i.e. game did not start, don't do anything
+        if(activePipes.length == 0)
             return;
-        context.save();
-        context.font = 'bold 30pt Calibri';
-        var gap = activePipes[0].aabb.h;
-        var width = activePipes[0].aabb.x;
+        var gap = currentPipe.aabb.h;
+        var width = currentPipe.aabb.x;
 
-        if (bird.aabb.y > gap && bird.aabb.y < (gap + HoleSize) && bird.aabb.x >= (width + PipeWidth)) {
+        // Only award the point if the pipe was not scored on yet
+        if (bird.aabb.y > gap && bird.aabb.y < (gap + HoleSize) && bird.aabb.x >= (width + PipeWidth) && !currentPipe.scored) {
             Score += 1;
-            activePipes[0].scored = true;
+            currentPipe.scored = true;
         }
-        context.fillText(Score, 100, 100);
+
+        // Draw the score on the canvas
+        context.save();
+        context.font = '20pt Calibri';
+        context.fillText("Score: " + Score, 25, 25);
         context.restore();
     }
 
+    /* Initializer when the user opens the website */
     window.onload = function () {
-        //Bird.prototype = new gameObject(new aabb(100, 200, 20, 20), -1, 0, "bird");
         var bird = new Bird(new aabb(100, 200, 35, 20), -1);
-        var pressed = false;
-
-        //var bird = new gameObject(new aabb(100, 200, 20, 20), -1, 0, "bird");
-        /*
-        // struct to hold bird and pipe
-        var game = {
-            bird:bird,pipe:pipe
-        };
-        bird.game = game;
-        pipe.game = game;
-        */
 
         var canvas = document.getElementById("frame");
         var context = canvas.getContext("2d");
@@ -330,43 +274,44 @@
         var background = document.getElementById("background");
         var backCtx = background.getContext("2d");
         backCtx.drawImage(backgroundImg, 0, 0);
-        //var i = 0;
+
+        var pressed = false;
         window.onkeypress = function (e) {
 
             /*
                 view the keystroke
                 alert(e.keyCode);
             */
+            /*
+                Acceleration; tough to do; set static velocity when pressed
+                bird.velocity -= 2;
+            */
 
-            if (e.keyCode === 102 && !pressed) {
+            function pressMe() {
+                // If the game was over, invoke new game state
                 if(gameOver) {
-                    gameActive = false;
-                    gameOver = false;
-                    window.onload();
-                } else {
+                    newGame();
+                }
+                // If the game is not over, start the game 
+                else if (!gameActive) {
                     gameActive = true;
                 }
                 bird.vVelocity = BirdJump;
                 pressed = true;
             }
 
-            if (e.keyCode === 32 && !pressed) {
+            // Spacebar KeyCode
+            if (e.keyCode === 102 && !pressed) {
+                pressMe();
+            }
 
-                /*
-                // acceleration; tough to do; set static velocity when pressed
-                //bird.velocity -= 2;
-                */
-                if(gameOver){
-                    gameActive = false;
-                    gameOver = false;
-                    window.onload();
-                } else {
-                    gameActive = true;
-                }
-                bird.vVelocity = BirdJump;
-                pressed = true;
+            // Tap KeyCode
+            if (e.keyCode === 32 && !pressed) {
+                pressMe();
             }
         }
+    
+        // Make sure to know when the key is pressed, otherwise accelaration is applied non-stop
         window.onkeyup = function (e) {
             if (e.keyCode === 32) {
                 pressed = false;
@@ -376,65 +321,76 @@
             }
         }
 
+        // Click KeyCode
         window.onclick = function (e) {
             bird.vVelocity = BirdJump;
         }
+
         requestAnimationFrame(function renderLoop() {
-            // saves the clean context state
+            // Saves the clean context state
             context.save();
+            
+            // Clean the canvas for the new rendering
             context.clearRect(0, 0, context.canvas.width, context.canvas.height);
+            
+            // Draw the bird to the canvas
+            bird.draw(context);
+
+            // Draw the pipes to the canvas
+            for (var i = 0; i < activePipes.length; i++) {
+                activePipes[i].draw(context);
+            }
+
+            // Draw moving floor
+            context.drawImage(floor,-1 * animater, context.canvas.height - floorHeight);
+
+            // check if the game is over
+            if(isGameOver(bird, context)){
+               displayGameover(context);
+               gameOver = true;
+               gameActive = false;
+            }
+
+            // Pre-click active game state, do not generate any pipes
             if(gameActive){
                 generatePipes(context);
                 killPipe();
                 updateScore(context, bird);
+            } else if (!gameOver) {
+                context.font = 'bold 30pt Helvetica';
+                context.fillText("Click to Start!", 125, 250);
             }
-            //context.rotate(Math.PI * i / 180 / 2);
-
-            /*
-            // this is needed otherwise it'll draw a continuing line.
-            // OR if you use context. save and restore you can bypass this
-            //context.beginPath();
-            //context.moveTo(100, 100+i);
-            //context.lineTo(200, 200+i);
-            */
-
-            bird.draw(context);
-            context.beginPath();
-            for (var i = 0; i < activePipes.length; i++) {
-                //activePipes[i].hVelocity -= hGravity;
-                activePipes[i].draw(context);
-            }
-            context.drawImage(floor,-1 * animater, context.canvas.height - floorHeight);
-            // context.fill();
-            // context.stroke();
+    
+            // Restore clean context state
             context.restore();
-            animater +=3.5;
+            
+            // Used to determine speed of the floor
+            animater += 3.5;
             if(animater > 500) {
                 animater = 0;
             }
-            /*
-            //context.strokeStyle = "blue";
-            //context.stroke();
-            //i++;
-            // this is needed otherwise it'll draw a continuing line.
-            */
 
-            // restores the clean context state (like MIPS s-registers)
-            //context.restore();
-            if(isGameOver(bird, context)){
-                // cleanup
-                gameOver = true;
-                activePipes.splice(0,activePipes.length);
-                // TODO: Display gameover and re-prompt restart
-                // TODO: Click to start
-                // TODO: Death
-                // TODO: Scoring
-            } else { 
+            // If game is over, don't draw anymore
+            if(!gameOver) 
                 requestAnimationFrame(renderLoop);
-            }
-
-
         });
-        
+
+        /* Function to display Game Over text */
+        function displayGameover(context) {
+            context.save();
+            context.font = 'bold 30pt Helvetica';
+            context.fillText("GAME OVER!!", 125, 250);
+            context.font = '20pt Helvetica';
+            context.fillText("Click to Restart", 165, 150);
+            context.restore();
+        }
+
+        /* New Game function */
+        function newGame() {
+            gameActive = false;
+            gameOver = false;
+            activePipes.splice(0, activePipes.length);
+            window.onload();
+        }
     };
 }());
