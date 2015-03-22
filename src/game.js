@@ -17,6 +17,7 @@
     var animater = 0;
     var gameOver = false;
     var gameActive = false;
+    var isTouch = false;
 
     // bird animations
     var BirdImgs = [];
@@ -275,6 +276,13 @@
         var backCtx = background.getContext("2d");
         backCtx.drawImage(backgroundImg, 0, 0);
 
+        canvas.addEventListener("touchstart", touchHandler, false);
+
+        function touchHandler(event) {
+            isTouch = true;
+            pressMe();
+        }
+
         var pressed = false;
 
         function pressMe() {
@@ -325,7 +333,8 @@
 
         // Click KeyCode
         window.onclick = function (e) {
-            pressMe();
+            if(!isTouch)
+                pressMe();
         }
 
         requestAnimationFrame(function renderLoop() {
